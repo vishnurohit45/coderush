@@ -2,9 +2,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Car, TrendingUp, DollarSign } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { demandData, peakHours } from "@/lib/mock-data";
+import type { AnalyticsData } from "@shared/schema";
 
 export default function Admin() {
-  const { data: analytics, isLoading } = useQuery({
+  const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics"],
     refetchInterval: 30000, // Refresh every 30 seconds
   });

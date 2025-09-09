@@ -79,3 +79,14 @@ export type Ride = typeof rides.$inferSelect;
 
 export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type Feedback = typeof feedback.$inferSelect;
+
+// Analytics API response type
+export type AnalyticsData = {
+  activeStudents: number;
+  activeDrivers: number;
+  dailyRides: number;
+  totalRevenue: number;
+  drivers: number;
+  rides: number;
+  avgRating: string;
+};

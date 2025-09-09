@@ -118,6 +118,10 @@ export class MemStorage implements IStorage {
   async createDriver(insertDriver: InsertDriver): Promise<Driver> {
     const id = randomUUID();
     const driver: Driver = { 
+      status: "offline",
+      rating: "0.00",
+      lat: null,
+      lng: null,
       ...insertDriver, 
       id, 
       createdAt: new Date() 
@@ -159,6 +163,10 @@ export class MemStorage implements IStorage {
   async createRide(insertRide: InsertRide): Promise<Ride> {
     const id = randomUUID();
     const ride: Ride = { 
+      status: "requested",
+      userId: null,
+      driverId: null,
+      scheduledAt: null,
       ...insertRide, 
       id, 
       createdAt: new Date() 
@@ -197,6 +205,8 @@ export class MemStorage implements IStorage {
   async createFeedback(insertFeedback: InsertFeedback): Promise<Feedback> {
     const id = randomUUID();
     const feedback: Feedback = { 
+      rating: null,
+      studentId: null,
       ...insertFeedback, 
       id, 
       createdAt: new Date() 

@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, MapPin, ShieldCheck, Coins, Clock, Users, Car, TrendingUp, DollarSign } from "lucide-react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import type { AnalyticsData } from "@shared/schema";
 
 export default function Home() {
-  const { data: analytics } = useQuery({
+  const { data: analytics } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics"],
   });
 
