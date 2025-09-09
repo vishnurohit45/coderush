@@ -8,9 +8,9 @@ export interface FareCalculation {
   estimatedTime: number;
 }
 
-const BASE_FARE = 2000; // UGX for first 2km
-const PER_KM_RATE = 500; // UGX per km after first 2km
-const PER_MINUTE_RATE = 50; // UGX per minute
+const BASE_FARE = 20; // INR for first 2km
+const PER_KM_RATE = 8; // INR per km after first 2km
+const PER_MINUTE_RATE = 2; // INR per minute
 const STUDENT_DISCOUNT = 0.1; // 10% student discount
 const NIGHT_SURCHARGE = 0.25; // 25% surcharge between 10PM-6AM
 
@@ -55,32 +55,38 @@ export function calculateFare(
 function calculateDistance(from: string, to: string): number {
   // Mock distance calculation based on location pairs
   const distanceMap: Record<string, Record<string, number>> = {
-    "main-gate": {
+    "temple-entrance": {
       "library": 1.5,
       "hostels": 2.1,
       "dining-hall": 1.8,
       "admin-block": 0.9,
       "sports-complex": 2.8,
-      "mbarara-town": 5.2,
-      "hospital": 4.1
+      "tirupathi-town": 5.2,
+      "hospital": 4.1,
+      "railway-station": 6.5,
+      "bus-station": 4.8
     },
     "library": {
-      "main-gate": 1.5,
+      "temple-entrance": 1.5,
       "hostels": 1.2,
       "dining-hall": 0.8,
       "admin-block": 1.1,
       "sports-complex": 2.1,
-      "mbarara-town": 4.8,
-      "hospital": 3.8
+      "tirupathi-town": 4.8,
+      "hospital": 3.8,
+      "railway-station": 5.5,
+      "bus-station": 4.2
     },
     "hostels": {
-      "main-gate": 2.1,
+      "temple-entrance": 2.1,
       "library": 1.2,
       "dining-hall": 0.8,
       "admin-block": 1.8,
       "sports-complex": 1.5,
-      "mbarara-town": 4.2,
-      "hospital": 3.2
+      "tirupathi-town": 4.2,
+      "hospital": 3.2,
+      "railway-station": 5.2,
+      "bus-station": 3.8
     }
     // Add more location pairs as needed
   };

@@ -117,7 +117,7 @@ export default function Driver() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Today's Earnings</p>
-                <p className="text-2xl font-bold text-foreground" data-testid="text-daily-earnings">UGX 125,000</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="text-daily-earnings">₹2,250</p>
               </div>
             </div>
           </CardContent>
@@ -171,7 +171,7 @@ export default function Driver() {
                   <p><span className="text-muted-foreground">From:</span> <span className="text-foreground">Library</span></p>
                   <p><span className="text-muted-foreground">To:</span> <span className="text-foreground">Student Hostels</span></p>
                   <p><span className="text-muted-foreground">Passengers:</span> <span className="text-foreground">2</span></p>
-                  <p><span className="text-muted-foreground">Fare:</span> <span className="text-primary font-semibold">UGX 3,500</span></p>
+                  <p><span className="text-muted-foreground">Fare:</span> <span className="text-primary font-semibold">₹65</span></p>
                 </div>
                 <div className="flex space-x-2 mt-3">
                   <Button size="sm" data-testid="button-accept-ride-1">Accept</Button>
@@ -191,7 +191,7 @@ export default function Driver() {
                   <p><span className="text-muted-foreground">From:</span> <span className="text-foreground">Main Gate</span></p>
                   <p><span className="text-muted-foreground">To:</span> <span className="text-foreground">Mbarara Town</span></p>
                   <p><span className="text-muted-foreground">Passengers:</span> <span className="text-foreground">1 (3 more slots)</span></p>
-                  <p><span className="text-muted-foreground">Fare:</span> <span className="text-primary font-semibold">UGX 4,600</span></p>
+                  <p><span className="text-muted-foreground">Fare:</span> <span className="text-primary font-semibold">₹80</span></p>
                 </div>
                 <div className="flex space-x-2 mt-3">
                   <Button size="sm" data-testid="button-accept-ride-2">Accept</Button>
@@ -215,14 +215,14 @@ export default function Driver() {
                   <div key={day.day} className="flex justify-between text-sm">
                     <span className="text-muted-foreground">{day.day}</span>
                     <span className="text-foreground font-medium" data-testid={`text-${day.day.toLowerCase()}-earnings`}>
-                      UGX {day.amount.toLocaleString()}
+                      ₹{day.amount.toLocaleString()}
                     </span>
                   </div>
                 ))}
                 <div className="flex justify-between text-sm font-semibold border-t border-border pt-2">
                   <span className="text-foreground">This Week Total</span>
                   <span className="text-primary" data-testid="text-weekly-total">
-                    UGX {weeklyEarnings.reduce((sum, day) => sum + day.amount, 0).toLocaleString()}
+                    ₹{weeklyEarnings.reduce((sum, day) => sum + day.amount, 0).toLocaleString()}
                   </span>
                 </div>
               </div>

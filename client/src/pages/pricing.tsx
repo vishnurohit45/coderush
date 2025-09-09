@@ -16,15 +16,15 @@ export default function Pricing() {
             <div className="space-y-4">
               <div className="flex justify-between items-center py-3 border-b border-border">
                 <span className="text-foreground">Base Fare (First 2km)</span>
-                <span className="font-semibold text-foreground" data-testid="text-base-fare-amount">UGX 2,000</span>
+                <span className="font-semibold text-foreground" data-testid="text-base-fare-amount">₹20</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-border">
                 <span className="text-foreground">Per Additional Kilometer</span>
-                <span className="font-semibold text-foreground" data-testid="text-per-km-rate">UGX 500</span>
+                <span className="font-semibold text-foreground" data-testid="text-per-km-rate">₹8</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-border">
                 <span className="text-foreground">Per Minute (Waiting/Traffic)</span>
-                <span className="font-semibold text-foreground" data-testid="text-per-minute-rate">UGX 50</span>
+                <span className="font-semibold text-foreground" data-testid="text-per-minute-rate">₹2</span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-border">
                 <span className="text-foreground">Night Surcharge (10PM-6AM)</span>
@@ -67,11 +67,11 @@ export default function Pricing() {
                 <div className="text-sm space-y-1">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Single Ride:</span>
-                    <span className="text-foreground" data-testid="text-example-single">UGX 3,500</span>
+                    <span className="text-foreground" data-testid="text-example-single">₹65</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Shared (4 people):</span>
-                    <span className="text-primary font-semibold" data-testid="text-example-shared">UGX 875 each</span>
+                    <span className="text-primary font-semibold" data-testid="text-example-shared">₹16 each</span>
                   </div>
                 </div>
               </div>
@@ -100,8 +100,8 @@ export default function Pricing() {
                   <tr key={index} className="border-b border-border" data-testid={`row-route-${index}`}>
                     <td className="py-3 text-foreground">{route.from} → {route.to}</td>
                     <td className="py-3 text-muted-foreground">{route.distance}</td>
-                    <td className="py-3 text-foreground">UGX {route.singleFare.toLocaleString()}</td>
-                    <td className="py-3 text-primary font-semibold">UGX {route.sharedFare.toLocaleString()}</td>
+                    <td className="py-3 text-foreground">₹{route.singleFare.toLocaleString()}</td>
+                    <td className="py-3 text-primary font-semibold">₹{route.sharedFare.toLocaleString()}</td>
                     <td className="py-3 text-muted-foreground">{route.estimatedTime}</td>
                   </tr>
                 ))}
@@ -118,7 +118,7 @@ export default function Pricing() {
           <div className="space-y-4">
             <div className="border-b border-border pb-4">
               <h3 className="font-medium text-foreground mb-2">How is the fare calculated?</h3>
-              <p className="text-sm text-muted-foreground">Base fare covers the first 2km, then UGX 500 per additional kilometer plus UGX 50 per minute for waiting or traffic delays.</p>
+              <p className="text-sm text-muted-foreground">Base fare covers the first 2km, then ₹8 per additional kilometer plus ₹2 per minute for waiting or traffic delays.</p>
             </div>
             <div className="border-b border-border pb-4">
               <h3 className="font-medium text-foreground mb-2">Do I get a student discount?</h3>

@@ -1,65 +1,67 @@
 export const locations = [
-  { value: "main-gate", label: "Main Gate" },
+  { value: "temple-entrance", label: "Temple Main Entrance" },
   { value: "library", label: "University Library" },
   { value: "hostels", label: "Student Hostels" },
   { value: "dining-hall", label: "Dining Hall" },
   { value: "admin-block", label: "Administration Block" },
   { value: "sports-complex", label: "Sports Complex" },
-  { value: "mbarara-town", label: "Mbarara Town Center" },
-  { value: "hospital", label: "Mbarara Regional Hospital" },
+  { value: "tirupathi-town", label: "Tirupathi Town Center" },
+  { value: "hospital", label: "SVIMS Hospital" },
+  { value: "railway-station", label: "Tirupathi Railway Station" },
+  { value: "bus-station", label: "Central Bus Station" },
 ];
 
 export const popularRoutes = [
   {
-    from: "Main Gate",
+    from: "Temple Entrance",
     to: "Library",
     distance: "1.5 km",
-    singleFare: 2000,
-    sharedFare: 500,
+    singleFare: 30,
+    sharedFare: 10,
     estimatedTime: "5 min"
   },
   {
     from: "Hostels",
     to: "Dining Hall", 
     distance: "0.8 km",
-    singleFare: 2000,
-    sharedFare: 500,
+    singleFare: 25,
+    sharedFare: 8,
     estimatedTime: "3 min"
   },
   {
     from: "Campus",
-    to: "Mbarara Town",
+    to: "Tirupathi Town",
     distance: "5.2 km",
-    singleFare: 4600,
-    sharedFare: 1150,
+    singleFare: 80,
+    sharedFare: 25,
     estimatedTime: "15 min"
   },
   {
     from: "Library",
     to: "Sports Complex",
     distance: "2.1 km",
-    singleFare: 2500,
-    sharedFare: 625,
+    singleFare: 40,
+    sharedFare: 12,
     estimatedTime: "7 min"
   },
   {
     from: "Campus",
-    to: "Regional Hospital",
+    to: "Railway Station",
     distance: "3.8 km",
-    singleFare: 3900,
-    sharedFare: 975,
+    singleFare: 65,
+    sharedFare: 20,
     estimatedTime: "12 min"
   }
 ];
 
 export const weeklyEarnings = [
-  { day: "Monday", amount: 89000 },
-  { day: "Tuesday", amount: 112500 },
-  { day: "Wednesday", amount: 95200 },
-  { day: "Thursday", amount: 134800 },
-  { day: "Friday", amount: 156300 },
-  { day: "Saturday", amount: 78100 },
-  { day: "Sunday", amount: 45600 }
+  { day: "Monday", amount: 1580 },
+  { day: "Tuesday", amount: 2025 },
+  { day: "Wednesday", amount: 1740 },
+  { day: "Thursday", amount: 2385 },
+  { day: "Friday", amount: 2820 },
+  { day: "Saturday", amount: 1425 },
+  { day: "Sunday", amount: 890 }
 ];
 
 export const demandData = [

@@ -47,32 +47,32 @@ export class MemStorage implements IStorage {
     const mockDrivers: InsertDriver[] = [
       {
         driverId: "A101",
-        name: "John Kamau",
-        phone: "+256 123 456 789",
+        name: "Ravi Kumar",
+        phone: "+91 98765 43210",
         autoNumber: "A101",
         status: "available",
-        lat: "0.6103",
-        lng: "30.6463",
+        lat: "13.6288",
+        lng: "79.4192",
         rating: "4.8"
       },
       {
         driverId: "A205",
-        name: "Sarah Mugisha",
-        phone: "+256 123 456 790",
+        name: "Lakshmi Devi",
+        phone: "+91 98765 43211",
         autoNumber: "A205",
         status: "available",
-        lat: "0.6123",
-        lng: "30.6453",
+        lat: "13.6308",
+        lng: "79.4172",
         rating: "4.9"
       },
       {
         driverId: "A089",
-        name: "Mike Rwomushana",
-        phone: "+256 123 456 791",
+        name: "Suresh Babu",
+        phone: "+91 98765 43212",
         autoNumber: "A089",
         status: "on-ride",
-        lat: "0.6143",
-        lng: "30.6483",
+        lat: "13.6268",
+        lng: "79.4212",
         rating: "4.7"
       }
     ];

@@ -273,32 +273,32 @@ export default function Booking() {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Base Fare</span>
                     <span className="text-foreground" data-testid="text-base-fare">
-                      UGX {fareEstimate.baseFare.toLocaleString()}
+                      ₹{fareEstimate.baseFare.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Distance ({fareEstimate.distance} km)</span>
                     <span className="text-foreground" data-testid="text-distance-fare">
-                      UGX {fareEstimate.distanceFare.toLocaleString()}
+                      ₹{fareEstimate.distanceFare.toLocaleString()}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Time ({fareEstimate.estimatedTime} min)</span>
                     <span className="text-foreground" data-testid="text-time-fare">
-                      UGX {fareEstimate.timeFare.toLocaleString()}
+                      ₹{fareEstimate.timeFare.toLocaleString()}
                     </span>
                   </div>
                   <hr className="border-border" />
                   <div className="flex justify-between font-semibold">
                     <span className="text-foreground">Total</span>
                     <span className="text-primary" data-testid="text-total-fare">
-                      UGX {fareEstimate.total.toLocaleString()}
+                      ₹{fareEstimate.total.toLocaleString()}
                     </span>
                   </div>
                   {rideType === "shared" && (
                     <div className="text-xs text-muted-foreground">
                       <span data-testid="text-shared-fare">
-                        Shared ride: UGX {fareEstimate.sharedTotal.toLocaleString()} per person
+                        Shared ride: ₹{fareEstimate.sharedTotal.toLocaleString()} per person
                       </span>
                     </div>
                   )}

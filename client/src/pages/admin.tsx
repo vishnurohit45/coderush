@@ -87,7 +87,7 @@ export default function Admin() {
               <div>
                 <p className="text-sm text-muted-foreground">Revenue Today</p>
                 <p className="text-2xl font-bold text-foreground" data-testid="text-revenue-today">
-                  UGX {analytics?.totalRevenue ? Math.round(analytics.totalRevenue / 1000) : "0"}K
+                  ₹{analytics?.totalRevenue ? Math.round(analytics.totalRevenue / 100) : "0"}K
                 </p>
               </div>
             </div>
@@ -230,25 +230,25 @@ export default function Admin() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-foreground">Today's Revenue</span>
                 <span className="text-sm font-medium text-foreground" data-testid="text-today-revenue">
-                  UGX {analytics?.totalRevenue ? Math.round(analytics.totalRevenue / 1000) : "0"}K
+                  ₹{analytics?.totalRevenue ? Math.round(analytics.totalRevenue / 100) : "0"}K
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-foreground">Week's Revenue</span>
                 <span className="text-sm font-medium text-foreground" data-testid="text-week-revenue">
-                  UGX {analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 7 / 1000) : "0"}K
+                  ₹{analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 7 / 100) : "0"}K
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-foreground">Driver Commissions</span>
                 <span className="text-sm font-medium text-foreground" data-testid="text-commissions">
-                  UGX {analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 0.8 / 1000) : "0"}K
+                  ₹{analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 0.8 / 100) : "0"}K
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-foreground">Platform Revenue</span>
                 <span className="text-sm font-medium text-primary" data-testid="text-platform-revenue">
-                  UGX {analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 0.2 / 1000) : "0"}K
+                  ₹{analytics?.totalRevenue ? Math.round(analytics.totalRevenue * 0.2 / 100) : "0"}K
                 </span>
               </div>
             </div>

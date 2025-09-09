@@ -55,7 +55,7 @@ export function BookingModal({ open, onOpenChange, bookingDetails }: BookingModa
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Total Fare:</span>
             <span className="font-medium text-primary" data-testid="text-total-fare">
-              UGX {bookingDetails.fare.toLocaleString()}
+₹{bookingDetails.fare.toLocaleString()}
             </span>
           </div>
         </div>

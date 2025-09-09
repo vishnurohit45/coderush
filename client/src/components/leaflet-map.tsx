@@ -23,8 +23,8 @@ export function LeafletMap({ drivers }: LeafletMapProps) {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
-    // Initialize map centered on MBU campus
-    mapRef.current = L.map(mapContainerRef.current).setView([0.6103, 30.6463], 14);
+    // Initialize map centered on Tirupathi
+    mapRef.current = L.map(mapContainerRef.current).setView([13.6288, 79.4192], 14);
     
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '© OpenStreetMap contributors'
