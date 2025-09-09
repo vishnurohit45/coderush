@@ -107,7 +107,7 @@ export default function Booking() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Book Your Ride</h1>
-        <p className="text-muted-foreground">Plan your journey across MBU campus with ease</p>
+        <p className="text-muted-foreground">Plan your journey across Tirupathi with ease</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
