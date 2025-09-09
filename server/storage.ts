@@ -120,7 +120,7 @@ export class MemStorage implements IStorage {
     const driver: Driver = { 
       ...insertDriver, 
       id, 
-      createdAt: new Date().toISOString() 
+      createdAt: new Date() 
     };
     this.drivers.set(id, driver);
     return driver;
@@ -161,7 +161,7 @@ export class MemStorage implements IStorage {
     const ride: Ride = { 
       ...insertRide, 
       id, 
-      createdAt: new Date().toISOString() 
+      createdAt: new Date() 
     };
     this.rides.set(id, ride);
     return ride;
@@ -199,7 +199,7 @@ export class MemStorage implements IStorage {
     const feedback: Feedback = { 
       ...insertFeedback, 
       id, 
-      createdAt: new Date().toISOString() 
+      createdAt: new Date() 
     };
     this.feedback.set(id, feedback);
     return feedback;
