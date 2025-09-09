@@ -9,9 +9,10 @@ import { Clock, Route, Car, Shield, MapPin, PhoneCall, User, Users } from "lucid
 import { BookingModal } from "@/components/booking-modal";
 import { locations } from "@/lib/mock-data";
 import { calculateFare, type FareCalculation } from "@/lib/fare-calculator";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import type { Ride } from "@shared/schema";
 
 export default function Booking() {
   const [pickupLocation, setPickupLocation] = useState("");
@@ -27,6 +28,11 @@ export default function Booking() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch user's bookings
+  const { data: userRides = [], isLoading: ridesLoading } = useQuery<Ride[]>({
+    queryKey: ["/api/rides"],
+    refetchInterval: 10000, // Refresh every 10 seconds
+  });
   const bookRideMutation = useMutation({
     mutationFn: async (rideData: any) => {
       const response = await apiRequest("POST", "/api/rides", rideData);
@@ -103,6 +109,16 @@ export default function Booking() {
     bookRideMutation.mutate(rideData);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'requested': return 'bg-blue-100 text-blue-800';
+      case 'accepted': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-yellow-100 text-yellow-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
       <div className="mb-8">
@@ -110,7 +126,7 @@ export default function Booking() {
         <p className="text-muted-foreground">Plan your journey across Tirupathi with ease</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 mb-8">
         <div className="lg:col-span-2">
           <Card className="shadow-sm" data-testid="card-booking-form">
             <CardContent className="p-6">
@@ -358,6 +374,61 @@ export default function Booking() {
         </div>
       </div>
 
+      {/* My Bookings Section */}
+      <Card className="shadow-sm" data-testid="card-my-bookings">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">My Recent Bookings</h3>
+          {ridesLoading ? (
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="animate-pulse p-4 border border-border rounded-lg">
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-3 bg-muted rounded w-1/2"></div>
+                </div>
+              ))}
+            </div>
+          ) : userRides.length > 0 ? (
+            <div className="space-y-4">
+              {userRides.slice(0, 5).map((ride) => (
+                <div key={ride.id} className="p-4 border border-border rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {locations.find(l => l.value === ride.pickupLocation)?.label || ride.pickupLocation} → {locations.find(l => l.value === ride.dropLocation)?.label || ride.dropLocation}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {ride.createdAt ? new Date(ride.createdAt).toLocaleDateString() : 'Recently'} • {ride.passengers} passenger{ride.passengers > 1 ? 's' : ''} • {ride.rideType}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(ride.status)}`}>
+                        {ride.status.charAt(0).toUpperCase() + ride.status.slice(1).replace('-', ' ')}
+                      </span>
+                      <p className="text-sm font-semibold text-foreground mt-1">₹{parseFloat(ride.fare).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  {ride.scheduledAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Scheduled: {new Date(ride.scheduledAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {userRides.length > 5 && (
+                <p className="text-sm text-muted-foreground text-center">
+                  Showing 5 most recent bookings
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Car className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground">No bookings yet</p>
+              <p className="text-sm text-muted-foreground">Your ride history will appear here</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
       <BookingModal
         open={bookingModalOpen}
         onOpenChange={setBookingModalOpen}

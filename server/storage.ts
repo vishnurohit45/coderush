@@ -1,5 +1,8 @@
 import { type User, type InsertUser, type Driver, type InsertDriver, type Ride, type InsertRide, type Feedback, type InsertFeedback } from "@shared/schema";
 import { randomUUID } from "crypto";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+import * as schema from "@shared/schema";
 
 export interface IStorage {
   // User methods
@@ -28,6 +31,157 @@ export interface IStorage {
   createFeedback(feedback: InsertFeedback): Promise<Feedback>;
 }
 
+export class DatabaseStorage implements IStorage {
+  // User methods
+  async getUser(id: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.users).where(eq(schema.users.id, id));
+    return result[0];
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.users).where(eq(schema.users.username, username));
+    return result[0];
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    if (!db) throw new Error("Database not available");
+    const result = await db.insert(schema.users).values(user).returning();
+    return result[0];
+  }
+
+  // Driver methods
+  async getAllDrivers(): Promise<Driver[]> {
+    if (!db) {
+      // Fallback to mock data
+      return [
+        {
+          id: "1",
+          driverId: "A101",
+          name: "Ravi Kumar",
+          phone: "+91 98765 43210",
+          autoNumber: "A101",
+          status: "available",
+          lat: "13.6288",
+          lng: "79.4192",
+          rating: "4.8",
+          createdAt: new Date()
+        },
+        {
+          id: "2",
+          driverId: "A205",
+          name: "Lakshmi Devi",
+          phone: "+91 98765 43211",
+          autoNumber: "A205",
+          status: "available",
+          lat: "13.6308",
+          lng: "79.4172",
+          rating: "4.9",
+          createdAt: new Date()
+        },
+        {
+          id: "3",
+          driverId: "A089",
+          name: "Suresh Babu",
+          phone: "+91 98765 43212",
+          autoNumber: "A089",
+          status: "on-ride",
+          lat: "13.6268",
+          lng: "79.4212",
+          rating: "4.7",
+          createdAt: new Date()
+        }
+      ];
+    }
+    return await db.select().from(schema.drivers);
+  }
+
+  async getDriver(id: string): Promise<Driver | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.drivers).where(eq(schema.drivers.id, id));
+    return result[0];
+  }
+
+  async getDriverByDriverId(driverId: string): Promise<Driver | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.drivers).where(eq(schema.drivers.driverId, driverId));
+    return result[0];
+  }
+
+  async createDriver(driver: InsertDriver): Promise<Driver> {
+    if (!db) throw new Error("Database not available");
+    const result = await db.insert(schema.drivers).values(driver).returning();
+    return result[0];
+  }
+
+  async updateDriverStatus(id: string, status: string): Promise<Driver | undefined> {
+    if (!db) return undefined;
+    const result = await db.update(schema.drivers)
+      .set({ status })
+      .where(eq(schema.drivers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateDriverLocation(id: string, lat: number, lng: number): Promise<Driver | undefined> {
+    if (!db) return undefined;
+    const result = await db.update(schema.drivers)
+      .set({ lat: lat.toString(), lng: lng.toString() })
+      .where(eq(schema.drivers.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Ride methods
+  async getAllRides(): Promise<Ride[]> {
+    if (!db) return [];
+    return await db.select().from(schema.rides);
+  }
+
+  async getRide(id: string): Promise<Ride | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.rides).where(eq(schema.rides.id, id));
+    return result[0];
+  }
+
+  async createRide(ride: InsertRide): Promise<Ride> {
+    if (!db) throw new Error("Database not available");
+    const result = await db.insert(schema.rides).values(ride).returning();
+    return result[0];
+  }
+
+  async updateRideStatus(id: string, status: string): Promise<Ride | undefined> {
+    if (!db) return undefined;
+    const result = await db.update(schema.rides)
+      .set({ status })
+      .where(eq(schema.rides.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getRidesByDriver(driverId: string): Promise<Ride[]> {
+    if (!db) return [];
+    return await db.select().from(schema.rides).where(eq(schema.rides.driverId, driverId));
+  }
+
+  async getRidesByUser(userId: string): Promise<Ride[]> {
+    if (!db) return [];
+    return await db.select().from(schema.rides).where(eq(schema.rides.userId, userId));
+  }
+
+  // Feedback methods
+  async getAllFeedback(): Promise<Feedback[]> {
+    if (!db) return [];
+    return await db.select().from(schema.feedback);
+  }
+
+  async createFeedback(feedback: InsertFeedback): Promise<Feedback> {
+    if (!db) throw new Error("Database not available");
+    const result = await db.insert(schema.feedback).values(feedback).returning();
+    return result[0];
+  }
+}
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private drivers: Map<string, Driver>;
@@ -216,4 +370,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = process.env.DATABASE_URL ? new DatabaseStorage() : new MemStorage();
