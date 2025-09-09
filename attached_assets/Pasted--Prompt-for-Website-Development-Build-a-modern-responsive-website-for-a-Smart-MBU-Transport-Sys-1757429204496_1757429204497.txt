@@ -1,0 +1,92 @@
+🚀 Prompt for Website Development
+
+Build a modern, responsive website for a “Smart MBU Transport System” with the following features:
+
+🌐 Pages & Structure
+
+Home Page
+
+Hero section: Title, tagline (“Smart, Fair, and Reliable Transport for MBU Students”).
+
+Quick links: Book a Ride, Track Autos, Driver Sign-In.
+
+Live banner showing current auto availability (from mock data).
+
+Book a Ride
+
+Form with: pickup location, drop location, date/time, number of passengers.
+
+Options: Single Ride | Shared Ride.
+
+Show estimated fare & travel time.
+
+Track Autos (Real-Time Demo)
+
+Map integration (Google Maps/Leaflet.js).
+
+Live mock markers of autos around MBU.
+
+Status indicator: Available, On Ride, Offline.
+
+Pricing & Transparency
+
+Table of base fares + distance/time multiplier.
+
+Shared ride example (split fare).
+
+FAQ on pricing policies.
+
+Driver Dashboard (Simple Page)
+
+Login for drivers.
+
+View upcoming ride requests (mock data).
+
+Earnings summary (daily/weekly).
+
+Admin / Analytics (Optional Demo Page)
+
+Demand-supply heatmap (mock data).
+
+Peak time prediction graph.
+
+Contact & Safety
+
+Emergency hotline.
+
+SOS button simulation.
+
+Feedback form for students.
+
+🎨 Design & UI Guidelines
+
+Use Tailwind CSS for clean, responsive UI.
+
+Rounded corners, soft shadows, campus-friendly theme (green/blue).
+
+Icons (Lucide/Feather) for autos, map pins, money, safety.
+
+Sticky navigation bar with quick access to Book and Track.
+
+⚙️ Functionality (MVP with Mock Data)
+
+Ride booking form → shows confirmation modal with estimated fare.
+
+Map → shows sample autos moving around (simulate with random positions).
+
+Driver login → dummy credentials to access driver dashboard.
+
+Admin page → graphs with sample analytics.
+
+🛠 Tech Stack (recommended)
+
+Frontend: React + Tailwind CSS.
+
+Map: Leaflet.js (open-source) or Google Maps API.
+
+Charts: Recharts.js for demand graphs.
+
+Backend (optional for demo): Firebase / Supabase or just JSON mock data.
+
+⚡ Final Prompt to Feed into AI/Code Generator:
+"Build a responsive website called Smart MBU Transport System using React and Tailwind CSS. It should include pages for booking rides, tracking autos on a map (with mock real-time positions), transparent pricing, a driver dashboard, and an optional admin analytics page. Use Leaflet.js for maps, Recharts for analytics, and a clean UI with rounded cards, soft shadows, and a student-friendly theme. Include sample data to demonstrate bookings, auto tracking, and pricing transparency."
