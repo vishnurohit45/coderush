@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart MBU Transport System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                borderRadius: {
+                    lg: "var(--radius)",
+                    md: "calc(var(--radius) - 2px)",
+                    sm: "calc(var(--radius) - 4px)",
+                },
+                colors: {
+                    background: "var(--background)",
+                    foreground: "var(--foreground)",
+                    card: {
+                        DEFAULT: "var(--card)",
+                        foreground: "var(--card-foreground)",
+                    },
+                    primary: {
+                        DEFAULT: "var(--primary)",
+                        foreground: "var(--primary-foreground)",
+                    },
+                    secondary: {
+                        DEFAULT: "var(--secondary)",
+                        foreground: "var(--secondary-foreground)",
+                    },
+                    muted: {
+                        DEFAULT: "var(--muted)",
+                        foreground: "var(--muted-foreground)",
+                    },
+                    accent: {
+                        DEFAULT: "var(--accent)",
+                        foreground: "var(--accent-foreground)",
+                    },
+                    destructive: {
+                        DEFAULT: "var(--destructive)",
+                        foreground: "var(--destructive-foreground)",
+                    },
+                    border: "var(--border)",
+                    input: "var(--input)",
+                    ring: "var(--ring)",
+                },
+                fontFamily: {
+                    sans: ["Inter", "system-ui", "sans-serif"],
+                }
+            },
+        }
+    };
+    </script>
+    
+    <style>
+        :root {
+            --background: hsl(0 0% 100%);
+            --foreground: hsl(222.2 84% 4.9%);
+            --card: hsl(0 0% 100%);
+            --card-foreground: hsl(222.2 84% 4.9%);
+            --primary: hsl(158 64% 52%);
+            --primary-foreground: hsl(210 40% 98%);
+            --secondary: hsl(200 71% 45%);
+            --secondary-foreground: hsl(222.2 47.4% 11.2%);
+            --muted: hsl(210 40% 96%);
+            --muted-foreground: hsl(215.4 16.3% 46.9%);
+            --accent: hsl(210 40% 96%);
+            --accent-foreground: hsl(222.2 47.4% 11.2%);
+            --destructive: hsl(0 84.2% 60.2%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(214.3 31.8% 91.4%);
+            --input: hsl(214.3 31.8% 91.4%);
+            --ring: hsl(158 64% 52%);
+            --radius: 12px;
+        }
+
+        .dark {
+            --background: hsl(222.2 84% 4.9%);
+            --foreground: hsl(210 40% 98%);
+            --card: hsl(222.2 84% 4.9%);
+            --card-foreground: hsl(210 40% 98%);
+            --primary: hsl(158 64% 52%);
+            --primary-foreground: hsl(222.2 84% 4.9%);
+            --secondary: hsl(217.2 32.6% 17.5%);
+            --secondary-foreground: hsl(210 40% 98%);
+            --muted: hsl(217.2 32.6% 17.5%);
+            --muted-foreground: hsl(215 20.2% 65.1%);
+            --accent: hsl(217.2 32.6% 17.5%);
+            --accent-foreground: hsl(210 40% 98%);
+            --destructive: hsl(0 62.8% 30.6%);
+            --destructive-foreground: hsl(210 40% 98%);
+            --border: hsl(217.2 32.6% 17.5%);
+            --input: hsl(217.2 32.6% 17.5%);
+            --ring: hsl(158 64% 52%);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-available { @apply bg-green-500; }
+        .status-on-ride { @apply bg-yellow-500; }
+        .status-offline { @apply bg-gray-400; }
+
+        .map-container {
+            background: linear-gradient(135deg, #e8f5e8 0%, #e1f2fb 100%);
+            min-height: 400px;
+        }
+    </style>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/recharts@2.8.0/dist/index.umd.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+
+<body class="bg-background text-foreground font-sans">
+    <!-- @COMPONENT: Navigation -->
+    <nav class="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                        <i data-lucide="bus" class="w-6 h-6 text-primary-foreground"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-foreground">Smart MBU</h1>
+                        <p class="text-xs text-muted-foreground">Transport System</p>
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-4">
+                    <button onclick="showPage('home')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Home</button>
+                    <button onclick="showPage('booking')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Book Ride</button>
+                    <button onclick="showPage('tracking')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Track Autos</button>
+                    <button onclick="showPage('pricing')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Pricing</button>
+                    <button onclick="showPage('driver')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Driver</button>
+                    <button onclick="showPage('admin')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Admin</button>
+                    <button onclick="showPage('contact')" class="nav-btn px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Contact</button>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <button onclick="showPage('booking')" class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors">
+                        Book Ride
+                    </button>
+                    <button class="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground" onclick="toggleMobileMenu()">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobileMenu" class="hidden md:hidden border-t border-border bg-background">
+            <div class="px-4 py-3 space-y-3">
+                <button onclick="showPage('home')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Home</button>
+                <button onclick="showPage('booking')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Book Ride</button>
+                <button onclick="showPage('tracking')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Track Autos</button>
+                <button onclick="showPage('pricing')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Pricing</button>
+                <button onclick="showPage('driver')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Driver</button>
+                <button onclick="showPage('admin')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Admin</button>
+                <button onclick="showPage('contact')" class="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground">Contact</button>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: Navigation -->
+
+    <!-- @COMPONENT: HomePage -->
+    <div id="homePage" class="page active">
+        <!-- Hero Section -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-primary/5 to-secondary/5">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="space-y-8">
+                        <div class="space-y-4">
+                            <h1 class="text-4xl lg:text-6xl font-bold text-foreground leading-tight">
+                                Smart Transport for
+                                <span class="text-primary">MBU Students</span>
+                            </h1>
+                            <p class="text-xl text-muted-foreground leading-relaxed">
+                                Smart, Fair, and Reliable Transport System designed specifically for Mbarara University students. Book rides, track autos, and travel safely across campus.
+                            </p>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4">
+                            <button onclick="showPage('booking')" class="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all transform hover:scale-105 flex items-center justify-center space-x-2">
+                                <i data-lucide="calendar" class="w-5 h-5"></i>
+                                <span>Book a Ride</span>
+                            </button>
+                            <button onclick="showPage('tracking')" class="border border-border hover:bg-accent text-foreground px-8 py-4 rounded-lg font-semibold text-lg transition-all flex items-center justify-center space-x-2">
+                                <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                <span>Track Autos</span>
+                            </button>
+                        </div>
+
+                        <!-- Live Banner -->
+                        <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full pulse-dot"></div>
+                                    <span class="font-semibold text-foreground">Live Auto Availability</span>
+                                </div>
+                                <span class="text-sm text-muted-foreground" data-mock="true">Updated 2 min ago</span>
+                            </div>
+                            <div class="mt-4 grid grid-cols-3 gap-4">
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600" data-mock="true">12</div>
+                                    <div class="text-sm text-muted-foreground">Available</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-yellow-600" data-mock="true">8</div>
+                                    <div class="text-sm text-muted-foreground">On Ride</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-gray-400" data-mock="true">3</div>
+                                    <div class="text-sm text-muted-foreground">Offline</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="relative">
+                        <!-- Campus transport scene with students and autos -->
+                        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" alt="University campus with transport" class="rounded-2xl shadow-2xl w-full h-auto" />
+                        <div class="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="py-16 bg-background">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <h2 class="text-3xl font-bold text-foreground mb-4">Why Choose Smart MBU Transport?</h2>
+                    <p class="text-xl text-muted-foreground max-w-3xl mx-auto">Built by students, for students. Our transport system prioritizes your safety, convenience, and budget.</p>
+                </div>
+                
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                            <i data-lucide="shield-check" class="w-6 h-6 text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-foreground mb-2">Safety First</h3>
+                        <p class="text-muted-foreground">Verified drivers, real-time tracking, and emergency SOS features keep you safe throughout your journey.</p>
+                    </div>
+                    
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center mb-4">
+                            <i data-lucide="coins" class="w-6 h-6 text-secondary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-foreground mb-2">Student-Friendly Pricing</h3>
+                        <p class="text-muted-foreground">Transparent fare calculation with shared ride options to split costs and save money.</p>
+                    </div>
+                    
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center mb-4">
+                            <i data-lucide="clock" class="w-6 h-6 text-primary"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold text-foreground mb-2">Real-Time Updates</h3>
+                        <p class="text-muted-foreground">Live auto tracking, accurate arrival times, and instant booking confirmations.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Stats -->
+        <section class="py-16 bg-muted/30">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                    <div>
+                        <div class="text-3xl font-bold text-primary" data-mock="true">2,500+</div>
+                        <div class="text-sm text-muted-foreground mt-1">Happy Students</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-primary" data-mock="true">50+</div>
+                        <div class="text-sm text-muted-foreground mt-1">Verified Drivers</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-primary" data-mock="true">15,000+</div>
+                        <div class="text-sm text-muted-foreground mt-1">Rides Completed</div>
+                    </div>
+                    <div>
+                        <div class="text-3xl font-bold text-primary" data-mock="true">98%</div>
+                        <div class="text-sm text-muted-foreground mt-1">Safety Rating</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <!-- @END_COMPONENT: HomePage -->
+
+    <!-- @COMPONENT: BookingPage -->
+    <div id="bookingPage" class="page hidden">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Book Your Ride</h1>
+                <p class="text-muted-foreground">Plan your journey across MBU campus with ease</p>
+            </div>
+
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <form id="bookingForm" class="space-y-6">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Pickup Location</label>
+                                    <select class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring">
+                                        <option value="">Select pickup point</option>
+                                        <option value="main-gate" data-mock="true">Main Gate</option>
+                                        <option value="library" data-mock="true">University Library</option>
+                                        <option value="hostels" data-mock="true">Student Hostels</option>
+                                        <option value="dining-hall" data-mock="true">Dining Hall</option>
+                                        <option value="admin-block" data-mock="true">Administration Block</option>
+                                        <option value="sports-complex" data-mock="true">Sports Complex</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Drop Location</label>
+                                    <select class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring">
+                                        <option value="">Select destination</option>
+                                        <option value="main-gate" data-mock="true">Main Gate</option>
+                                        <option value="library" data-mock="true">University Library</option>
+                                        <option value="hostels" data-mock="true">Student Hostels</option>
+                                        <option value="dining-hall" data-mock="true">Dining Hall</option>
+                                        <option value="admin-block" data-mock="true">Administration Block</option>
+                                        <option value="sports-complex" data-mock="true">Sports Complex</option>
+                                        <option value="mbarara-town" data-mock="true">Mbarara Town Center</option>
+                                        <option value="hospital" data-mock="true">Mbarara Regional Hospital</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Date</label>
+                                    <input type="date" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-foreground mb-2">Time</label>
+                                    <input type="time" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-2">Number of Passengers</label>
+                                <select class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring">
+                                    <option value="1">1 Passenger</option>
+                                    <option value="2">2 Passengers</option>
+                                    <option value="3">3 Passengers</option>
+                                    <option value="4">4 Passengers</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-foreground mb-3">Ride Type</label>
+                                <div class="grid md:grid-cols-2 gap-4">
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="rideType" value="single" class="peer sr-only" checked />
+                                        <div class="p-4 border-2 border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                                            <div class="flex items-center space-x-3">
+                                                <i data-lucide="user" class="w-5 h-5 text-primary"></i>
+                                                <div>
+                                                    <div class="font-semibold text-foreground">Single Ride</div>
+                                                    <div class="text-sm text-muted-foreground">Private journey, just for you</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="relative cursor-pointer">
+                                        <input type="radio" name="rideType" value="shared" class="peer sr-only" />
+                                        <div class="p-4 border-2 border-border rounded-lg peer-checked:border-primary peer-checked:bg-primary/5 transition-all">
+                                            <div class="flex items-center space-x-3">
+                                                <i data-lucide="users" class="w-5 h-5 text-primary"></i>
+                                                <div>
+                                                    <div class="font-semibold text-foreground">Shared Ride</div>
+                                                    <div class="text-sm text-muted-foreground">Split costs with other students</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" onclick="calculateFare()" class="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-semibold transition-colors">
+                                Calculate Fare & Book Ride
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Fare Estimate</h3>
+                        <div id="fareEstimate" class="space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-muted-foreground">Base Fare</span>
+                                <span class="text-foreground" data-mock="true">UGX 2,000</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-muted-foreground">Distance (3.2 km)</span>
+                                <span class="text-foreground" data-mock="true">UGX 1,600</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-muted-foreground">Time (12 min)</span>
+                                <span class="text-foreground" data-mock="true">UGX 600</span>
+                            </div>
+                            <hr class="border-border">
+                            <div class="flex justify-between font-semibold">
+                                <span class="text-foreground">Total</span>
+                                <span class="text-primary" data-mock="true">UGX 4,200</span>
+                            </div>
+                            <div class="text-xs text-muted-foreground">
+                                <span data-mock="true">Shared ride: UGX 2,100 per person</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Journey Details</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="clock" class="w-4 h-4 text-muted-foreground"></i>
+                                <span class="text-muted-foreground">Estimated Time:</span>
+                                <span class="text-foreground" data-mock="true">12 minutes</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="route" class="w-4 h-4 text-muted-foreground"></i>
+                                <span class="text-muted-foreground">Distance:</span>
+                                <span class="text-foreground" data-mock="true">3.2 km</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="car" class="w-4 h-4 text-muted-foreground"></i>
+                                <span class="text-muted-foreground">Available Autos:</span>
+                                <span class="text-foreground" data-mock="true">5 nearby</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Safety Features</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="shield" class="w-4 h-4 text-green-600"></i>
+                                <span class="text-muted-foreground">Verified Driver</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i>
+                                <span class="text-muted-foreground">Live Tracking</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="phone-call" class="w-4 h-4 text-red-600"></i>
+                                <span class="text-muted-foreground">Emergency SOS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: BookingPage -->
+
+    <!-- @COMPONENT: TrackingPage -->
+    <div id="trackingPage" class="page hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Track Autos</h1>
+                <p class="text-muted-foreground">Real-time location of all autos around MBU campus</p>
+            </div>
+
+            <div class="grid lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-3">
+                    <div class="bg-card border border-border rounded-lg overflow-hidden shadow-sm">
+                        <div id="map" class="map-container w-full h-96"></div>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Auto Status</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-foreground">Available</span>
+                                </div>
+                                <span class="text-sm font-semibold text-foreground" data-mock="true">12</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                    <span class="text-sm text-foreground">On Ride</span>
+                                </div>
+                                <span class="text-sm font-semibold text-foreground" data-mock="true">8</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                    <span class="text-sm text-foreground">Offline</span>
+                                </div>
+                                <span class="text-sm font-semibold text-foreground" data-mock="true">3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Nearest Autos</h3>
+                        <div class="space-y-3">
+                            <!-- @MAP: nearbyAutos.map(auto => ( -->
+                            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg" data-mock="true">
+                                <div>
+                                    <div class="font-medium text-foreground">Auto #A101</div>
+                                    <div class="text-xs text-muted-foreground">Driver: John K.</div>
+                                    <div class="text-xs text-muted-foreground">0.3 km away</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <div class="text-xs text-muted-foreground mt-1">Available</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg" data-mock="true">
+                                <div>
+                                    <div class="font-medium text-foreground">Auto #A205</div>
+                                    <div class="text-xs text-muted-foreground">Driver: Sarah M.</div>
+                                    <div class="text-xs text-muted-foreground">0.7 km away</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <div class="text-xs text-muted-foreground mt-1">Available</div>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg" data-mock="true">
+                                <div>
+                                    <div class="font-medium text-foreground">Auto #A089</div>
+                                    <div class="text-xs text-muted-foreground">Driver: Mike R.</div>
+                                    <div class="text-xs text-muted-foreground">1.2 km away</div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                    <div class="text-xs text-muted-foreground mt-1">On Ride</div>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="font-semibold text-foreground mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button onclick="showPage('booking')" class="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded-lg font-medium transition-colors text-sm">
+                                Book Nearest Auto
+                            </button>
+                            <button class="w-full border border-border hover:bg-accent text-foreground py-2 rounded-lg font-medium transition-colors text-sm">
+                                Set Pickup Alert
+                            </button>
+                            <button class="w-full border border-border hover:bg-accent text-foreground py-2 rounded-lg font-medium transition-colors text-sm">
+                                Call Auto Direct
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: TrackingPage -->
+
+    <!-- @COMPONENT: PricingPage -->
+    <div id="pricingPage" class="page hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Transparent Pricing</h1>
+                <p class="text-muted-foreground max-w-2xl mx-auto">Student-friendly rates with no hidden fees. Know exactly what you'll pay before you ride.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8 mb-12">
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-foreground mb-6">Base Fare Structure</h2>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center py-3 border-b border-border">
+                            <span class="text-foreground">Base Fare (First 2km)</span>
+                            <span class="font-semibold text-foreground" data-mock="true">UGX 2,000</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-border">
+                            <span class="text-foreground">Per Additional Kilometer</span>
+                            <span class="font-semibold text-foreground" data-mock="true">UGX 500</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-border">
+                            <span class="text-foreground">Per Minute (Waiting/Traffic)</span>
+                            <span class="font-semibold text-foreground" data-mock="true">UGX 50</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3 border-b border-border">
+                            <span class="text-foreground">Night Surcharge (10PM-6AM)</span>
+                            <span class="font-semibold text-foreground" data-mock="true">+25%</span>
+                        </div>
+                        <div class="flex justify-between items-center py-3">
+                            <span class="text-foreground">Student Discount</span>
+                            <span class="font-semibold text-green-600" data-mock="true">-10%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-foreground mb-6">Shared Ride Benefits</h2>
+                    <div class="space-y-6">
+                        <div class="p-4 bg-primary/10 rounded-lg">
+                            <h3 class="font-semibold text-foreground mb-2">Split the Cost</h3>
+                            <p class="text-sm text-muted-foreground">Share your ride with other students going in the same direction and split the fare equally.</p>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex justify-between">
+                                <span class="text-sm text-foreground">2 Passengers</span>
+                                <span class="text-sm font-semibold text-primary" data-mock="true">50% savings each</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-foreground">3 Passengers</span>
+                                <span class="text-sm font-semibold text-primary" data-mock="true">67% savings each</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-sm text-foreground">4 Passengers</span>
+                                <span class="text-sm font-semibold text-primary" data-mock="true">75% savings each</span>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-secondary/10 rounded-lg">
+                            <h3 class="font-semibold text-foreground mb-2">Example: Library to Hostels</h3>
+                            <div class="text-sm space-y-1">
+                                <div class="flex justify-between">
+                                    <span class="text-muted-foreground">Single Ride:</span>
+                                    <span class="text-foreground" data-mock="true">UGX 3,500</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-muted-foreground">Shared (4 people):</span>
+                                    <span class="text-primary font-semibold" data-mock="true">UGX 875 each</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Routes -->
+            <div class="bg-card border border-border rounded-lg p-6 shadow-sm mb-8">
+                <h2 class="text-xl font-semibold text-foreground mb-6">Popular Campus Routes</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-border">
+                                <th class="text-left py-3 text-foreground font-medium">Route</th>
+                                <th class="text-left py-3 text-foreground font-medium">Distance</th>
+                                <th class="text-left py-3 text-foreground font-medium">Single Ride</th>
+                                <th class="text-left py-3 text-foreground font-medium">Shared (Per Person)</th>
+                                <th class="text-left py-3 text-foreground font-medium">Est. Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Main Gate → Library</td>
+                                <td class="py-3 text-muted-foreground">1.5 km</td>
+                                <td class="py-3 text-foreground">UGX 2,000</td>
+                                <td class="py-3 text-primary font-semibold">UGX 500</td>
+                                <td class="py-3 text-muted-foreground">5 min</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Hostels → Dining Hall</td>
+                                <td class="py-3 text-muted-foreground">0.8 km</td>
+                                <td class="py-3 text-foreground">UGX 2,000</td>
+                                <td class="py-3 text-primary font-semibold">UGX 500</td>
+                                <td class="py-3 text-muted-foreground">3 min</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Campus → Mbarara Town</td>
+                                <td class="py-3 text-muted-foreground">5.2 km</td>
+                                <td class="py-3 text-foreground">UGX 4,600</td>
+                                <td class="py-3 text-primary font-semibold">UGX 1,150</td>
+                                <td class="py-3 text-muted-foreground">15 min</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Library → Sports Complex</td>
+                                <td class="py-3 text-muted-foreground">2.1 km</td>
+                                <td class="py-3 text-foreground">UGX 2,500</td>
+                                <td class="py-3 text-primary font-semibold">UGX 625</td>
+                                <td class="py-3 text-muted-foreground">7 min</td>
+                            </tr>
+                            <tr data-mock="true">
+                                <td class="py-3 text-foreground">Campus → Regional Hospital</td>
+                                <td class="py-3 text-muted-foreground">3.8 km</td>
+                                <td class="py-3 text-foreground">UGX 3,900</td>
+                                <td class="py-3 text-primary font-semibold">UGX 975</td>
+                                <td class="py-3 text-muted-foreground">12 min</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                <h2 class="text-xl font-semibold text-foreground mb-6">Pricing FAQ</h2>
+                <div class="space-y-4">
+                    <div class="border-b border-border pb-4">
+                        <h3 class="font-medium text-foreground mb-2">How is the fare calculated?</h3>
+                        <p class="text-sm text-muted-foreground">Base fare covers the first 2km, then UGX 500 per additional kilometer plus UGX 50 per minute for waiting or traffic delays.</p>
+                    </div>
+                    <div class="border-b border-border pb-4">
+                        <h3 class="font-medium text-foreground mb-2">Do I get a student discount?</h3>
+                        <p class="text-sm text-muted-foreground">Yes! All MBU students with valid ID get a 10% discount on all rides automatically applied at booking.</p>
+                    </div>
+                    <div class="border-b border-border pb-4">
+                        <h3 class="font-medium text-foreground mb-2">How does shared ride pricing work?</h3>
+                        <p class="text-sm text-muted-foreground">The total fare is split equally among all passengers. You're only matched with students going to nearby destinations.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-medium text-foreground mb-2">Are there any hidden fees?</h3>
+                        <p class="text-sm text-muted-foreground">No hidden fees! The price you see at booking is exactly what you pay. Night surcharge (25%) applies between 10PM-6AM.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: PricingPage -->
+
+    <!-- @COMPONENT: DriverPage -->
+    <div id="driverPage" class="page hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Driver Dashboard</h1>
+                <p class="text-muted-foreground">Manage your rides and track earnings</p>
+            </div>
+
+            <!-- Login Section (shown when not logged in) -->
+            <div id="driverLogin" class="max-w-md mx-auto">
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-foreground mb-6 text-center">Driver Sign In</h2>
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Driver ID</label>
+                            <input type="text" placeholder="Enter your driver ID" value="DEMO123" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Password</label>
+                            <input type="password" placeholder="Enter password" value="password" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                        <button type="button" onclick="showDriverDashboard()" class="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-semibold transition-colors">
+                            Sign In
+                        </button>
+                    </form>
+                    <p class="text-xs text-muted-foreground mt-4 text-center">
+                        Demo credentials: ID: DEMO123, Password: password
+                    </p>
+                </div>
+            </div>
+
+            <!-- Dashboard (shown when logged in) -->
+            <div id="driverDashboard" class="hidden">
+                <div class="grid lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                                <i data-lucide="wallet" class="w-6 h-6 text-primary"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Today's Earnings</p>
+                                <p class="text-2xl font-bold text-foreground" data-mock="true">UGX 125,000</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-secondary/10 rounded-lg flex items-center justify-center">
+                                <i data-lucide="car" class="w-6 h-6 text-secondary"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Rides Completed</p>
+                                <p class="text-2xl font-bold text-foreground" data-mock="true">8</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i data-lucide="star" class="w-6 h-6 text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm text-muted-foreground">Rating</p>
+                                <p class="text-2xl font-bold text-foreground" data-mock="true">4.8</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                        <h3 class="text-lg font-semibold text-foreground mb-4">Upcoming Ride Requests</h3>
+                        <div class="space-y-4">
+                            <!-- @MAP: rideRequests.map(request => ( -->
+                            <div class="p-4 border border-border rounded-lg" data-mock="true">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p class="font-medium text-foreground">Student #S2501</p>
+                                        <p class="text-sm text-muted-foreground">Requested 5 min ago</p>
+                                    </div>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">New</span>
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <p><span class="text-muted-foreground">From:</span> <span class="text-foreground">Library</span></p>
+                                    <p><span class="text-muted-foreground">To:</span> <span class="text-foreground">Student Hostels</span></p>
+                                    <p><span class="text-muted-foreground">Passengers:</span> <span class="text-foreground">2</span></p>
+                                    <p><span class="text-muted-foreground">Fare:</span> <span class="text-primary font-semibold">UGX 3,500</span></p>
+                                </div>
+                                <div class="flex space-x-2 mt-3">
+                                    <button class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded text-sm font-medium transition-colors">Accept</button>
+                                    <button class="border border-border hover:bg-accent text-foreground px-4 py-2 rounded text-sm font-medium transition-colors">Decline</button>
+                                </div>
+                            </div>
+
+                            <div class="p-4 border border-border rounded-lg" data-mock="true">
+                                <div class="flex justify-between items-start mb-2">
+                                    <div>
+                                        <p class="font-medium text-foreground">Student #S1847</p>
+                                        <p class="text-sm text-muted-foreground">Requested 8 min ago</p>
+                                    </div>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">Shared</span>
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <p><span class="text-muted-foreground">From:</span> <span class="text-foreground">Main Gate</span></p>
+                                    <p><span class="text-muted-foreground">To:</span> <span class="text-foreground">Mbarara Town</span></p>
+                                    <p><span class="text-muted-foreground">Passengers:</span> <span class="text-foreground">1 (3 more slots)</span></p>
+                                    <p><span class="text-muted-foreground">Fare:</span> <span class="text-primary font-semibold">UGX 4,600</span></p>
+                                </div>
+                                <div class="flex space-x-2 mt-3">
+                                    <button class="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded text-sm font-medium transition-colors">Accept</button>
+                                    <button class="border border-border hover:bg-accent text-foreground px-4 py-2 rounded text-sm font-medium transition-colors">Decline</button>
+                                </div>
+                            </div>
+                            <!-- @END_MAP )) -->
+
+                            <div class="text-center text-sm text-muted-foreground py-4">
+                                No more pending requests
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                            <h3 class="text-lg font-semibold text-foreground mb-4">Weekly Earnings</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Monday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 89,000</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Tuesday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 112,500</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Wednesday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 95,200</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Thursday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 134,800</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Friday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 156,300</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-muted-foreground">Saturday</span>
+                                    <span class="text-foreground font-medium" data-mock="true">UGX 78,100</span>
+                                </div>
+                                <div class="flex justify-between text-sm font-semibold border-t border-border pt-2">
+                                    <span class="text-foreground">This Week Total</span>
+                                    <span class="text-primary" data-mock="true">UGX 665,900</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                            <h3 class="text-lg font-semibold text-foreground mb-4">Status & Controls</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-foreground">Status</span>
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                        <span class="text-sm font-medium text-foreground">Online</span>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-foreground">Auto Location</span>
+                                    <span class="text-sm text-muted-foreground" data-mock="true">Near Library</span>
+                                </div>
+                                <div class="space-y-2">
+                                    <button class="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground py-2 rounded-lg font-medium transition-colors">
+                                        Go Offline
+                                    </button>
+                                    <button class="w-full border border-border hover:bg-accent text-foreground py-2 rounded-lg font-medium transition-colors">
+                                        Emergency Alert
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: DriverPage -->
+
+    <!-- @COMPONENT: AdminPage -->
+    <div id="adminPage" class="page hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Admin Analytics</h1>
+                <p class="text-muted-foreground">System insights and demand analytics</p>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="users" class="w-8 h-8 text-primary"></i>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Active Students</p>
+                            <p class="text-2xl font-bold text-foreground" data-mock="true">2,547</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="car" class="w-8 h-8 text-secondary"></i>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Active Drivers</p>
+                            <p class="text-2xl font-bold text-foreground" data-mock="true">23</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="trending-up" class="w-8 h-8 text-green-600"></i>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Daily Rides</p>
+                            <p class="text-2xl font-bold text-foreground" data-mock="true">156</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="dollar-sign" class="w-8 h-8 text-yellow-600"></i>
+                        <div>
+                            <p class="text-sm text-muted-foreground">Revenue Today</p>
+                            <p class="text-2xl font-bold text-foreground" data-mock="true">UGX 2.1M</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-6 mb-8">
+                <!-- Demand Heatmap -->
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Demand Heatmap</h3>
+                    <div class="space-y-3">
+                        <!-- @FUNCTIONALITY: This should implement a heatmap showing demand across different campus locations -->
+                        <div class="grid grid-cols-4 gap-2 text-xs">
+                            <div class="p-2 bg-green-100 text-green-800 rounded text-center font-medium" data-mock="true">Library<br/>High</div>
+                            <div class="p-2 bg-yellow-100 text-yellow-800 rounded text-center font-medium" data-mock="true">Hostels<br/>Medium</div>
+                            <div class="p-2 bg-red-100 text-red-800 rounded text-center font-medium" data-mock="true">Main Gate<br/>Very High</div>
+                            <div class="p-2 bg-blue-100 text-blue-800 rounded text-center font-medium" data-mock="true">Dining<br/>Low</div>
+                            <div class="p-2 bg-yellow-100 text-yellow-800 rounded text-center font-medium" data-mock="true">Admin<br/>Medium</div>
+                            <div class="p-2 bg-green-100 text-green-800 rounded text-center font-medium" data-mock="true">Sports<br/>High</div>
+                            <div class="p-2 bg-blue-100 text-blue-800 rounded text-center font-medium" data-mock="true">Parking<br/>Low</div>
+                            <div class="p-2 bg-red-100 text-red-800 rounded text-center font-medium" data-mock="true">Town Route<br/>Very High</div>
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-muted-foreground mt-4">
+                            <span>Low Demand</span>
+                            <div class="flex space-x-1">
+                                <div class="w-4 h-4 bg-blue-100 rounded"></div>
+                                <div class="w-4 h-4 bg-yellow-100 rounded"></div>
+                                <div class="w-4 h-4 bg-green-100 rounded"></div>
+                                <div class="w-4 h-4 bg-red-100 rounded"></div>
+                            </div>
+                            <span>High Demand</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Peak Time Prediction -->
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Peak Time Analysis</h3>
+                    <div class="space-y-4">
+                        <!-- @FUNCTIONALITY: This should implement a time-based chart showing peak hours -->
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">7:00 - 9:00 AM</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-red-500 h-2 rounded-full" style="width: 85%"></div>
+                                    </div>
+                                    <span class="text-xs text-foreground" data-mock="true">85%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">12:00 - 2:00 PM</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-green-500 h-2 rounded-full" style="width: 65%"></div>
+                                    </div>
+                                    <span class="text-xs text-foreground" data-mock="true">65%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">5:00 - 7:00 PM</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-red-500 h-2 rounded-full" style="width: 92%"></div>
+                                    </div>
+                                    <span class="text-xs text-foreground" data-mock="true">92%</span>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-muted-foreground">9:00 - 11:00 PM</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-24 bg-gray-200 rounded-full h-2">
+                                        <div class="bg-yellow-500 h-2 rounded-full" style="width: 45%"></div>
+                                    </div>
+                                    <span class="text-xs text-foreground" data-mock="true">45%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 p-3 bg-muted/50 rounded-lg">
+                            <p class="text-sm text-foreground font-medium">Recommendation:</p>
+                            <p class="text-xs text-muted-foreground" data-mock="true">Deploy 3 additional autos during evening peak (5-7 PM) to meet demand.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Analytics -->
+            <div class="bg-card border border-border rounded-lg p-6 shadow-sm mb-8">
+                <h3 class="text-lg font-semibold text-foreground mb-4">Popular Routes Today</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-border">
+                                <th class="text-left py-3 text-foreground font-medium">Route</th>
+                                <th class="text-left py-3 text-foreground font-medium">Rides</th>
+                                <th class="text-left py-3 text-foreground font-medium">Revenue</th>
+                                <th class="text-left py-3 text-foreground font-medium">Avg. Wait Time</th>
+                                <th class="text-left py-3 text-foreground font-medium">Satisfaction</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Campus ↔ Mbarara Town</td>
+                                <td class="py-3 text-foreground">34</td>
+                                <td class="py-3 text-foreground">UGX 156,400</td>
+                                <td class="py-3 text-muted-foreground">4 min</td>
+                                <td class="py-3 text-green-600">4.8/5</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Main Gate → Library</td>
+                                <td class="py-3 text-foreground">28</td>
+                                <td class="py-3 text-foreground">UGX 56,000</td>
+                                <td class="py-3 text-muted-foreground">2 min</td>
+                                <td class="py-3 text-green-600">4.9/5</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Hostels → Dining Hall</td>
+                                <td class="py-3 text-foreground">22</td>
+                                <td class="py-3 text-foreground">UGX 44,000</td>
+                                <td class="py-3 text-muted-foreground">3 min</td>
+                                <td class="py-3 text-green-600">4.7/5</td>
+                            </tr>
+                            <tr class="border-b border-border" data-mock="true">
+                                <td class="py-3 text-foreground">Library → Sports Complex</td>
+                                <td class="py-3 text-foreground">18</td>
+                                <td class="py-3 text-foreground">UGX 45,000</td>
+                                <td class="py-3 text-muted-foreground">5 min</td>
+                                <td class="py-3 text-yellow-600">4.3/5</td>
+                            </tr>
+                            <tr data-mock="true">
+                                <td class="py-3 text-foreground">Campus → Regional Hospital</td>
+                                <td class="py-3 text-foreground">12</td>
+                                <td class="py-3 text-foreground">UGX 46,800</td>
+                                <td class="py-3 text-muted-foreground">6 min</td>
+                                <td class="py-3 text-green-600">4.6/5</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="grid lg:grid-cols-3 gap-6">
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">System Health</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Server Uptime</span>
+                            <span class="text-sm font-medium text-green-600" data-mock="true">99.8%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Avg. Response Time</span>
+                            <span class="text-sm font-medium text-foreground" data-mock="true">120ms</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Active Connections</span>
+                            <span class="text-sm font-medium text-foreground" data-mock="true">1,247</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Failed Bookings</span>
+                            <span class="text-sm font-medium text-red-600" data-mock="true">0.2%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Driver Performance</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Avg. Rating</span>
+                            <span class="text-sm font-medium text-green-600" data-mock="true">4.7/5</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">On-Time Rate</span>
+                            <span class="text-sm font-medium text-green-600" data-mock="true">94%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Cancellation Rate</span>
+                            <span class="text-sm font-medium text-yellow-600" data-mock="true">3.2%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Safety Incidents</span>
+                            <span class="text-sm font-medium text-green-600" data-mock="true">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h3 class="text-lg font-semibold text-foreground mb-4">Financial Summary</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Today's Revenue</span>
+                            <span class="text-sm font-medium text-foreground" data-mock="true">UGX 2.1M</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Week's Revenue</span>
+                            <span class="text-sm font-medium text-foreground" data-mock="true">UGX 14.7M</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Driver Commissions</span>
+                            <span class="text-sm font-medium text-foreground" data-mock="true">UGX 11.8M</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-foreground">Platform Revenue</span>
+                            <span class="text-sm font-medium text-primary" data-mock="true">UGX 2.9M</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AdminPage -->
+
+    <!-- @COMPONENT: ContactPage -->
+    <div id="contactPage" class="page hidden">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8 text-center">
+                <h1 class="text-3xl font-bold text-foreground mb-2">Contact & Safety</h1>
+                <p class="text-muted-foreground">Your safety is our priority. Get help when you need it.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8 mb-8">
+                <!-- Emergency Section -->
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-foreground mb-6 flex items-center space-x-2">
+                        <i data-lucide="shield-alert" class="w-6 h-6 text-red-600"></i>
+                        <span>Emergency Contact</span>
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                            <h3 class="font-semibold text-red-800 mb-2">24/7 Emergency Hotline</h3>
+                            <p class="text-2xl font-bold text-red-600" data-mock="true">+256 123 456 789</p>
+                            <p class="text-sm text-red-700 mt-1">Call immediately in case of any emergency</p>
+                        </div>
+                        
+                        <button onclick="sosAlert()" class="w-full bg-red-600 hover:bg-red-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center space-x-2">
+                            <i data-lucide="phone-call" class="w-6 h-6"></i>
+                            <span>SOS Emergency Alert</span>
+                        </button>
+                        
+                        <div class="text-xs text-muted-foreground">
+                            <p>• SOS button sends your location to emergency contacts</p>
+                            <p>• Immediately connects you to our emergency team</p>
+                            <p>• Alerts campus security and local authorities</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regular Support -->
+                <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                    <h2 class="text-xl font-semibold text-foreground mb-6 flex items-center space-x-2">
+                        <i data-lucide="headphones" class="w-6 h-6 text-primary"></i>
+                        <span>Customer Support</span>
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 border border-border rounded-lg">
+                                <div class="text-sm text-muted-foreground">Phone Support</div>
+                                <div class="font-semibold text-foreground" data-mock="true">+256 987 654 321</div>
+                                <div class="text-xs text-muted-foreground">Mon-Fri: 8AM-10PM</div>
+                            </div>
+                            <div class="p-4 border border-border rounded-lg">
+                                <div class="text-sm text-muted-foreground">WhatsApp</div>
+                                <div class="font-semibold text-foreground" data-mock="true">+256 123 456 789</div>
+                                <div class="text-xs text-muted-foreground">24/7 Available</div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <button class="w-full border border-border hover:bg-accent text-foreground py-3 rounded-lg font-medium transition-colors">
+                                Chat with Support
+                            </button>
+                            <button class="w-full border border-border hover:bg-accent text-foreground py-3 rounded-lg font-medium transition-colors">
+                                Report an Issue
+                            </button>
+                            <button class="w-full border border-border hover:bg-accent text-foreground py-3 rounded-lg font-medium transition-colors">
+                                Track My Complaint
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Feedback Form -->
+            <div class="bg-card border border-border rounded-lg p-6 shadow-sm mb-8">
+                <h2 class="text-xl font-semibold text-foreground mb-6">Send us Feedback</h2>
+                <form class="space-y-4">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Your Name</label>
+                            <input type="text" placeholder="Enter your name" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-foreground mb-2">Student ID</label>
+                            <input type="text" placeholder="Enter your student ID" class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring" />
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Feedback Type</label>
+                        <select class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring">
+                            <option value="">Select feedback type</option>
+                            <option value="general">General Feedback</option>
+                            <option value="driver">Driver Feedback</option>
+                            <option value="safety">Safety Concern</option>
+                            <option value="suggestion">Feature Suggestion</option>
+                            <option value="complaint">Complaint</option>
+                            <option value="compliment">Compliment</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Your Feedback</label>
+                        <textarea rows="4" placeholder="Tell us about your experience..." class="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring resize-none"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-foreground mb-2">Rate Your Experience</label>
+                        <div class="flex space-x-2">
+                            <button type="button" class="star-rating w-8 h-8 text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                            <button type="button" class="star-rating w-8 h-8 text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                            <button type="button" class="star-rating w-8 h-8 text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                            <button type="button" class="star-rating w-8 h-8 text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                            <button type="button" class="star-rating w-8 h-8 text-2xl text-gray-300 hover:text-yellow-400 transition-colors">★</button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 rounded-lg font-semibold transition-colors">
+                        Submit Feedback
+                    </button>
+                </form>
+            </div>
+
+            <!-- Safety Guidelines -->
+            <div class="bg-card border border-border rounded-lg p-6 shadow-sm">
+                <h2 class="text-xl font-semibold text-foreground mb-6">Safety Guidelines</h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="font-semibold text-foreground mb-3">Before Your Ride</h3>
+                        <ul class="space-y-2 text-sm text-muted-foreground">
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Verify driver details match the app</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Check auto license plate number</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Share trip details with a friend</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Wait in a safe, well-lit area</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-semibold text-foreground mb-3">During Your Ride</h3>
+                        <ul class="space-y-2 text-sm text-muted-foreground">
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Follow the GPS route on the app</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Keep your phone charged and accessible</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Trust your instincts - use SOS if needed</span>
+                            </li>
+                            <li class="flex items-start space-x-2">
+                                <i data-lucide="check" class="w-4 h-4 text-green-600 mt-0.5"></i>
+                                <span>Rate your driver after the trip</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ContactPage -->
+
+    <!-- @COMPONENT: BookingModal -->
+    <div id="bookingModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-card border border-border rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check" class="w-8 h-8 text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-foreground mb-2">Booking Confirmed!</h3>
+                <p class="text-muted-foreground">Your ride has been successfully booked</p>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Booking ID:</span>
+                    <span class="font-medium text-foreground" data-mock="true">#BK2024001</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Driver:</span>
+                    <span class="font-medium text-foreground" data-mock="true">John Kamau (Auto #A101)</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Pickup:</span>
+                    <span class="font-medium text-foreground" data-mock="true">5 minutes</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Total Fare:</span>
+                    <span class="font-medium text-primary" data-mock="true">UGX 3,500</span>
+                </div>
+            </div>
+            
+            <div class="flex space-x-3">
+                <button onclick="hideModal('bookingModal')" class="flex-1 border border-border hover:bg-accent text-foreground py-2 rounded-lg font-medium transition-colors">
+                    Close
+                </button>
+                <button onclick="showPage('tracking')" class="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground py-2 rounded-lg font-medium transition-colors">
+                    Track Ride
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: BookingModal -->
+
+    <!-- Scripts -->
+    <script>
+        // Initialize icons
+        lucide.createIcons();
+
+        // Mock data for autos
+        const mockAutos = [
+            { id: 'A101', lat: 0.6103, lng: 30.6463, status: 'available', driver: 'John K.' },
+            { id: 'A205', lat: 0.6123, lng: 30.6453, status: 'available', driver: 'Sarah M.' },
+            { id: 'A089', lat: 0.6143, lng: 30.6483, status: 'on-ride', driver: 'Mike R.' },
+            { id: 'A156', lat: 0.6093, lng: 30.6443, status: 'available', driver: 'Grace N.' },
+            { id: 'A233', lat: 0.6113, lng: 30.6473, status: 'offline', driver: 'Peter M.' }
+        ];
+
+        let map = null;
+        let autoMarkers = [];
+
+        // Page navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('active');
+            });
+            
+            // Show selected page
+            const targetPage = document.getElementById(pageId + 'Page');
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+                targetPage.classList.add('active');
+                
+                // Initialize map for tracking page
+                if (pageId === 'tracking' && !map) {
+                    setTimeout(initMap, 100);
+                }
+            }
+            
+            // Update navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-muted-foreground');
+            });
+            
+            // Hide mobile menu
+            document.getElementById('mobileMenu').classList.add('hidden');
+        }
+
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('hidden');
+        }
+
+        // Initialize map
+        function initMap() {
+            if (map) return;
+            
+            map = L.map('map').setView([0.6103, 30.6463], 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Add auto markers
+            mockAutos.forEach(auto => {
+                const marker = L.marker([auto.lat, auto.lng]).addTo(map);
+                
+                let statusColor = auto.status === 'available' ? 'green' : 
+                                auto.status === 'on-ride' ? 'orange' : 'gray';
+                
+                marker.bindPopup(`
+                    <div class="text-center">
+                        <div class="font-semibold">${auto.id}</div>
+                        <div class="text-sm text-gray-600">Driver: ${auto.driver}</div>
+                        <div class="text-sm capitalize text-${statusColor === 'green' ? 'green' : statusColor === 'orange' ? 'yellow' : 'gray'}-600">${auto.status.replace('-', ' ')}</div>
+                    </div>
+                `);
+                
+                autoMarkers.push(marker);
+            });
+
+            // Simulate auto movement
+            setInterval(() => {
+                autoMarkers.forEach((marker, index) => {
+                    const auto = mockAutos[index];
+                    if (auto.status === 'available' || auto.status === 'on-ride') {
+                        const newLat = auto.lat + (Math.random() - 0.5) * 0.002;
+                        const newLng = auto.lng + (Math.random() - 0.5) * 0.002;
+                        marker.setLatLng([newLat, newLng]);
+                        auto.lat = newLat;
+                        auto.lng = newLng;
+                    }
+                });
+            }, 3000);
+        }
+
+        // Booking functionality
+        function calculateFare() {
+            // TODO: Implement fare calculation logic
+            setTimeout(() => {
+                showModal('bookingModal');
+            }, 1000);
+        }
+
+        // Driver dashboard
+        function showDriverDashboard() {
+            document.getElementById('driverLogin').classList.add('hidden');
+            document.getElementById('driverDashboard').classList.remove('hidden');
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // SOS alert simulation
+        function sosAlert() {
+            alert('🚨 SOS ALERT ACTIVATED!\n\n• Emergency contacts notified\n• Location shared with authorities\n• MBU Security alerted\n• Emergency hotline connecting...\n\nHelp is on the way!');
+        }
+
+        // Star rating functionality
+        document.querySelectorAll('.star-rating').forEach((star, index) => {
+            star.addEventListener('click', function() {
+                const stars = document.querySelectorAll('.star-rating');
+                stars.forEach((s, i) => {
+                    if (i <= index) {
+                        s.classList.remove('text-gray-300');
+                        s.classList.add('text-yellow-400');
+                    } else {
+                        s.classList.remove('text-yellow-400');
+                        s.classList.add('text-gray-300');
+                    }
+                });
+            });
+        });
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            
+            // Auto-refresh data simulation
+            setInterval(() => {
+                // Update live availability numbers
+                const availableCount = document.querySelector('[data-mock="true"]');
+                if (availableCount && availableCount.textContent === '12') {
+                    // Simulate minor changes in availability
+                    const change = Math.floor(Math.random() * 3) - 1;
+                    // Keep updating mock data indicators
+                }
+            }, 10000);
+        });
+    </script>
+</body>
+</html>
