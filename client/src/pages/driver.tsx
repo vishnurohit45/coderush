@@ -1,100 +1,66 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Wallet, Car, Star, Users } from "lucide-react";
 import { weeklyEarnings } from "@/lib/mock-data";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
+import { Link } from "wouter";
 
 export default function Driver() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [driverId, setDriverId] = useState("DEMO123");
-  const [password, setPassword] = useState("password");
-  const [driverData, setDriverData] = useState<any>(null);
+  const { user, driver, isAuthenticated } = useAuth();
 
-  const { toast } = useToast();
-
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: { driverId: string; password: string }) => {
-      const response = await apiRequest("POST", "/api/auth/driver", credentials);
-      return response.json();
-    },
-    onSuccess: (data) => {
-      if (data.success) {
-        setIsLoggedIn(true);
-        setDriverData(data.driver);
-        toast({
-          title: "Login Successful",
-          description: "Welcome back to your dashboard!",
-        });
-      } else {
-        toast({
-          title: "Login Failed",
-          description: data.message || "Invalid credentials",
-          variant: "destructive",
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Login Error",
-        description: error.message || "Failed to login",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate({ driverId, password });
-  };
-
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return (
-      <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16 fade-in">
-        <Card className="shadow-sm" data-testid="card-driver-login">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 fade-in text-center">
+        <Card className="shadow-sm" data-testid="card-driver-access-denied">
           <CardContent className="p-6">
-            <h2 className="text-xl font-semibold text-foreground mb-6 text-center">Driver Sign In</h2>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Label htmlFor="driver-id" className="block text-sm font-medium text-foreground mb-2">
-                  Driver ID
-                </Label>
-                <Input
-                  type="text"
-                  placeholder="Enter your driver ID"
-                  value={driverId}
-                  onChange={(e) => setDriverId(e.target.value)}
-                  data-testid="input-driver-id"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-                  Password
-                </Label>
-                <Input
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  data-testid="input-password"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loginMutation.isPending}
-                data-testid="button-driver-signin"
-              >
-                {loginMutation.isPending ? "Signing In..." : "Sign In"}
-              </Button>
-            </form>
-            <p className="text-xs text-muted-foreground mt-4 text-center">
-              Demo credentials: ID: DEMO123, Password: password
+            <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-4">Driver Access Required</h2>
+            <p className="text-muted-foreground mb-6">
+              {!isAuthenticated 
+                ? "Please sign in to access the driver dashboard."
+                : "This page is only accessible to registered drivers."
+              }
             </p>
+            <div className="space-y-3">
+              {!isAuthenticated ? (
+                <Link href="/login">
+                  <Button data-testid="button-go-to-login">
+                    Sign In
+                  </Button>
+                </Link>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  If you're a driver, please contact support to update your account.
+                </p>
+              )}
+              <Link href="/">
+                <Button variant="outline" data-testid="button-go-home">
+                  Go to Home
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (user?.userType !== "driver") {
+    return (
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16 fade-in text-center">
+        <Card className="shadow-sm" data-testid="card-not-driver">
+          <CardContent className="p-6">
+            <Car className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-foreground mb-4">Driver Access Only</h2>
+            <p className="text-muted-foreground mb-6">
+              This dashboard is only accessible to registered drivers. You're currently signed in as a student.
+            </p>
+            <Link href="/">
+              <Button data-testid="button-back-home">
+                Back to Home
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -105,7 +71,7 @@ export default function Driver() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">Driver Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back, {driverData?.name || "Driver"}! Manage your rides and track earnings</p>
+        <p className="text-muted-foreground">Welcome back, {driver?.name || user?.fullName}! Manage your rides and track earnings</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
@@ -146,7 +112,7 @@ export default function Driver() {
               <div>
                 <p className="text-sm text-muted-foreground">Rating</p>
                 <p className="text-2xl font-bold text-foreground" data-testid="text-driver-rating">
-                  {driverData?.rating || "4.8"}
+                  {driver?.rating || "4.8"}
                 </p>
               </div>
             </div>
@@ -243,6 +209,12 @@ export default function Driver() {
                 <div className="flex justify-between items-center">
                   <span className="text-foreground">Auto Location</span>
                   <span className="text-sm text-muted-foreground" data-testid="text-auto-location">Near Library</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-foreground">Auto Number</span>
+                  <span className="text-sm font-medium text-foreground" data-testid="text-auto-number">
+                    {driver?.autoNumber || "N/A"}
+                  </span>
                 </div>
                 <div className="space-y-2">
                   <Button variant="destructive" className="w-full" data-testid="button-go-offline">

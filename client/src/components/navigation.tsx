@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Bus, Menu, X } from "lucide-react";
+import { Bus, Menu, X, User, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export function Navigation() {
   const [location] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
+  const { toast } = useToast();
 
   const navItems = [
     { path: "/", label: "Home" },
@@ -20,6 +24,22 @@ export function Navigation() {
   const isActive = (path: string) => {
     if (path === "/" && location === "/") return true;
     return path !== "/" && location.startsWith(path);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+    } catch (error) {
+      toast({
+        title: "Logout Failed",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -55,11 +75,41 @@ export function Navigation() {
           </div>
 
           <div className="flex items-center space-x-3">
-            <Link href="/booking">
-              <Button data-testid="button-book-ride-header">
-                Book Ride
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/booking">
+                  <Button data-testid="button-book-ride-header">
+                    Book Ride
+                  </Button>
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <div className="hidden sm:block text-sm">
+                    <span className="text-muted-foreground">Welcome, </span>
+                    <span className="font-medium text-foreground">{user?.fullName}</span>
+                    {user?.userType === "driver" && (
+                      <span className="ml-1 text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                        Driver
+                      </span>
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleLogout}
+                    data-testid="button-logout"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <Link href="/login">
+                <Button data-testid="button-login-header">
+                  <User className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -96,6 +146,19 @@ export function Navigation() {
                   </Button>
                 </Link>
               ))}
+              {isAuthenticated && (
+                <Button
+                  variant="ghost"
+                  className="block w-full text-left px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    handleLogout();
+                    setMobileMenuOpen(false);
+                  }}
+                  data-testid="button-mobile-logout"
+                >
+                  Sign Out
+                </Button>
+              )}
             </div>
           </div>
         )}

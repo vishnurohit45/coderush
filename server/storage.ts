@@ -1,5 +1,6 @@
 import { type User, type InsertUser, type Driver, type InsertDriver, type Ride, type InsertRide, type Feedback, type InsertFeedback } from "@shared/schema";
 import { randomUUID } from "crypto";
+import bcrypt from "bcrypt";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import * as schema from "@shared/schema";
@@ -8,12 +9,15 @@ export interface IStorage {
   // User methods
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  authenticateUser(username: string, password: string): Promise<User | null>;
 
   // Driver methods
   getAllDrivers(): Promise<Driver[]>;
   getDriver(id: string): Promise<Driver | undefined>;
   getDriverByDriverId(driverId: string): Promise<Driver | undefined>;
+  getDriverByUserId(userId: string): Promise<Driver | undefined>;
   createDriver(driver: InsertDriver): Promise<Driver>;
   updateDriverStatus(id: string, status: string): Promise<Driver | undefined>;
   updateDriverLocation(id: string, lat: number, lng: number): Promise<Driver | undefined>;
@@ -45,8 +49,85 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.users).where(eq(schema.users.email, email));
+    return result[0];
+  }
+
   async createUser(user: InsertUser): Promise<User> {
     if (!db) throw new Error("Database not available");
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const userWithHashedPassword = { ...user, password: hashedPassword };
+    const result = await db.insert(schema.users).values(userWithHashedPassword).returning();
+    return result[0];
+  }
+
+  async authenticateUser(username: string, password: string): Promise<User | null> {
+    if (!db) return null;
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    return isValid ? user : null;
+  }
+
+  // Driver methods
+  async getAllDrivers(): Promise<Driver[]> {
+    if (!db) {
+      // Fallback to mock data
+      return [
+        {
+          id: "1",
+          userId: null,
+          driverId: "A101",
+          name: "Ravi Kumar",
+          phone: "+91 98765 43210",
+          autoNumber: "A101",
+          status: "available",
+          lat: "13.6288",
+          lng: "79.4192",
+          rating: "4.8",
+          createdAt: new Date()
+        },
+        {
+          id: "2",
+          userId: null,
+          driverId: "A205",
+          name: "Lakshmi Devi",
+          phone: "+91 98765 43211",
+          autoNumber: "A205",
+          status: "available",
+          lat: "13.6308",
+          lng: "79.4172",
+          rating: "4.9",
+          createdAt: new Date()
+        },
+        {
+          id: "3",
+          userId: null,
+          driverId: "A089",
+          name: "Suresh Babu",
+          phone: "+91 98765 43212",
+          autoNumber: "A089",
+          status: "on-ride",
+          lat: "13.6268",
+          lng: "79.4212",
+          rating: "4.7",
+          createdAt: new Date()
+        }
+      ];
+    }
+    return await db.select().from(schema.drivers);
+  }
+
+  async getDriverByUserId(userId: string): Promise<Driver | undefined> {
+    if (!db) return undefined;
+    const result = await db.select().from(schema.drivers).where(eq(schema.drivers.userId, userId));
+    return result[0];
+  }
+
     const result = await db.insert(schema.users).values(user).returning();
     return result[0];
   }
@@ -200,6 +281,7 @@ export class MemStorage implements IStorage {
     // Create some mock drivers
     const mockDrivers: InsertDriver[] = [
       {
+        userId: null,
         driverId: "A101",
         name: "Ravi Kumar",
         phone: "+91 98765 43210",
@@ -210,6 +292,7 @@ export class MemStorage implements IStorage {
         rating: "4.8"
       },
       {
+        userId: null,
         driverId: "A205",
         name: "Lakshmi Devi",
         phone: "+91 98765 43211",
@@ -220,6 +303,7 @@ export class MemStorage implements IStorage {
         rating: "4.9"
       },
       {
+        userId: null,
         driverId: "A089",
         name: "Suresh Babu",
         phone: "+91 98765 43212",
@@ -247,11 +331,32 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(insertUser.password, 10);
+    const user: User = { 
+      ...insertUser, 
+      id, 
+      password: hashedPassword,
+      createdAt: new Date() 
+    };
     this.users.set(id, user);
     return user;
+  }
+
+  async authenticateUser(username: string, password: string): Promise<User | null> {
+    const user = await this.getUserByUsername(username);
+    if (!user) return null;
+    
+    const isValid = await bcrypt.compare(password, user.password);
+    return isValid ? user : null;
   }
 
   // Driver methods
@@ -269,6 +374,12 @@ export class MemStorage implements IStorage {
     );
   }
 
+  async getDriverByUserId(userId: string): Promise<Driver | undefined> {
+    return Array.from(this.drivers.values()).find(
+      (driver) => driver.userId === userId
+    );
+  }
+
   async createDriver(insertDriver: InsertDriver): Promise<Driver> {
     const id = randomUUID();
     const driver: Driver = { 
@@ -276,6 +387,7 @@ export class MemStorage implements IStorage {
       rating: "0.00",
       lat: null,
       lng: null,
+      userId: null,
       ...insertDriver, 
       id, 
       createdAt: new Date() 

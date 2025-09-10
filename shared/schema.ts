@@ -1,16 +1,23 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, decimal, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, decimal, boolean, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull().unique(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  userType: text("user_type").notNull().default("student"), // student, driver
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  studentId: text("student_id"), // for students
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const drivers = pgTable("drivers", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id),
   driverId: text("driver_id").notNull().unique(),
   name: text("name").notNull(),
   phone: text("phone").notNull(),
@@ -23,9 +30,9 @@ export const drivers = pgTable("drivers", {
 });
 
 export const rides = pgTable("rides", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").references(() => users.id),
-  driverId: varchar("driver_id").references(() => drivers.id),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: uuid("user_id").references(() => users.id),
+  driverId: uuid("driver_id").references(() => drivers.id),
   pickupLocation: text("pickup_location").notNull(),
   dropLocation: text("drop_location").notNull(),
   passengers: integer("passengers").notNull(),
@@ -37,7 +44,7 @@ export const rides = pgTable("rides", {
 });
 
 export const feedback = pgTable("feedback", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   studentId: text("student_id"),
   type: text("type").notNull(),
@@ -47,9 +54,24 @@ export const feedback = pgTable("feedback", {
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const loginSchema = z.object({
   username: true,
   password: true,
+});
+
+export const registerSchema = z.object({
+  email: z.string().email(),
+  username: z.string().min(3),
+  password: z.string().min(6),
+  fullName: z.string().min(2),
+  phone: z.string().optional(),
+  studentId: z.string().optional(),
+  userType: z.enum(["student", "driver"]).default("student"),
 });
 
 export const insertDriverSchema = createInsertSchema(drivers).omit({
