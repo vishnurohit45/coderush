@@ -127,6 +127,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(schema.drivers).where(eq(schema.drivers.userId, userId));
     return result[0];
   }
+}
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
